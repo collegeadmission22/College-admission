@@ -15,6 +15,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const course = applyOverlay?.querySelector('select[name="course"]');
       if (course) course.value = trigger.dataset.course;
     }
+    if (trigger?.dataset.distanceOnline) {
+      const distanceOnline = applyOverlay?.querySelector('select[name="preferred_distance_online"]');
+      if (distanceOnline) distanceOnline.value = trigger.dataset.distanceOnline;
+    }
   };
   const closeApply = () => applyOverlay?.classList.remove("open");
   document.querySelectorAll("[data-open-apply]").forEach(button => button.addEventListener("click", openApply));

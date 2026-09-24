@@ -18,8 +18,8 @@ import csv, hashlib, hmac, io, json, re, secrets, urllib.request
 from openpyxl import Workbook, load_workbook
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.pdfgen import canvas
-from .forms import ApiKeyCreateForm, BulkDataImportForm, CommunicationForm, ConsultantCreateForm, ContactForm, FollowUpCompleteForm, FollowUpForm, LeadForm, LeadImportForm, LeadRemarkForm, LeadUpdateForm, StudentApplicationForm, StudentDocumentForm, StudentSignupForm
-from .models import BulkDataBatch, CRMApiKey, ChatMessage, College, CollegeCategory, Communication, Course, FollowUp, Lead, LeadActivity, LeadImportBatch, LeadRemark, NurtureLog, OnlineCourse, SocialClick, SocialLink, StudentApplication, UserProfile, UniversityMaster, StateMaster, CountryMaster
+from .forms import ApiKeyCreateForm, BulkDataImportForm, CommunicationForm, ConsultantCreateForm, ContactForm, FollowUpCompleteForm, FollowUpForm, LeadForm, LeadImportForm, LeadRemarkForm, LeadUpdateForm, OwnLeadForm, StudentApplicationForm, StudentDocumentForm, StudentSignupForm
+from .models import BulkDataBatch, CRMApiKey, ChatMessage, College, CollegeCategory, Communication, Course, FollowUp, Lead, LeadActivity, LeadImportBatch, LeadRemark, NurtureLog, OnlineCourse, DistanceOnlineEducation, SocialClick, SocialLink, StudentApplication, UserProfile, UniversityMaster, StateMaster, CountryMaster
 from .bulk_data import DATASETS, dataset_records, make_tabular_response, process_bulk_rows, read_image_zip, read_rows
 
 def crm_role(user):
@@ -49,7 +49,7 @@ def normalise_phone(value):
 def apply_lead_filters(queryset, params):
     """Apply the shared CRM report/export dimensions to a lead queryset."""
     filters = {
-        "source": "source", "status": "status", "city": "city__iexact",
+        "source": "source", "status": "status", "lead_category": "lead_category", "city": "city__iexact",
         "course": "course_id", "college": "preferred_college_id",
         "counsellor": "assigned_to_id",
     }
@@ -69,7 +69,7 @@ def _save_public_lead(form, source):
     created = lead is None
     if created:
         lead = Lead(phone=phone)
-    for field in ["name", "father_name", "email", "course", "preferred_college"]:
+    for field in ["name", "father_name", "email", "city", "course", "preferred_college", "preferred_distance_online"]:
         value = data.get(field)
         if value not in (None, ""):
             setattr(lead, field, value)
@@ -88,10 +88,10 @@ def home(request):
         consent = request.POST.get("consent") == "on"
         if form.is_valid() and consent:
             _save_public_lead(form, "Website")
-            messages.success(request, "Thank you! Your enquiry is in Lead CRM and a counsellor will contact you shortly.")
+            messages.success(request, "Thanks! Your details are saved in Lead CRM. Helpline: 9429692142, 9911445580, 9911442142.")
             return redirect("home")
         messages.error(request, "Please enter valid details and accept the contact consent.")
-    return render(request, "admissions/home.html", {"form": form, "apply_form": form, "colleges": colleges[:12], "courses": Course.objects.all()[:12], "q": q})
+    return render(request, "admissions/home.html", {"form": form, "apply_form": form, "colleges": colleges.prefetch_related("categories", "courses")[:12], "courses": Course.objects.prefetch_related("college_categories", "course_categories")[:12], "college_categories": CollegeCategory.objects.order_by("name"), "distance_online": DistanceOnlineEducation.objects.filter(active=True).order_by("-featured", "name")[:8], "q": q})
 
 def health(request):
     try:
@@ -108,14 +108,14 @@ def contact(request):
         consent = request.POST.get("consent") == "on"
         if form.is_valid() and consent:
             _save_public_lead(form, "Contact Form")
-            messages.success(request, "Your enquiry has been added to Lead CRM. We will contact you shortly.")
+            messages.success(request, "Thanks! Your details are saved in Lead CRM. Helpline: 9429692142, 9911445580, 9911442142.")
             return redirect("contact")
         messages.error(request, "Please enter valid details and accept the contact consent.")
     return render(request, "admissions/contact.html", {"form": form, "apply_form": form})
 
 def online_courses(request):
-    # Online colleges are now part of the unified Colleges catalogue.
-    return redirect("colleges_page")
+    items = DistanceOnlineEducation.objects.filter(active=True).select_related("university", "state", "country").prefetch_related("categories")
+    return render(request, "admissions/distance_online.html", {"items": items})
 
 def courses_page(request):
     category = request.GET.get("category", "")
@@ -127,12 +127,15 @@ def courses_page(request):
 
 def colleges_page(request):
     q = request.GET.get("q", "").strip()
+    category = request.GET.get("category", "").strip()
     colleges = list(
         College.objects.filter(active=True)
         .select_related("university", "state", "country")
         .prefetch_related("categories")
         .order_by("name")
     )
+    if category:
+        colleges = [c for c in colleges if any(category.lower() in x.name.lower() for x in c.categories.all())]
     if q:
         college_ids = College.objects.filter(active=True).filter(
             Q(name__icontains=q) | Q(university__name__icontains=q) |
@@ -163,6 +166,7 @@ def colleges_page(request):
     return render(request, "admissions/colleges.html", {
         "college_list": colleges,
         "q": q,
+        "selected_category": category,
     })
 
 def college_detail(request, pk):
@@ -190,7 +194,7 @@ def quick_apply(request):
         source = "Website"
     if form.is_valid() and consent:
         _save_public_lead(form, source)
-        messages.success(request, "Enquiry submitted and added to Lead CRM. A counsellor will contact you shortly.")
+        messages.success(request, "Thanks! Your details are saved in Lead CRM. Helpline: 9429692142, 9911445580, 9911442142.")
     else:
         messages.error(request, "Please enter valid details and accept the contact consent.")
     return redirect(request.META.get("HTTP_REFERER") or "home")
@@ -245,6 +249,31 @@ def student_dashboard(request):
     if request.method == "POST" and "upload_document" in request.POST and doc_form.is_valid():
         document = doc_form.save(commit=False); document.application = application; document.save(); messages.success(request, "Document uploaded."); return redirect("student_dashboard")
     return render(request, "admissions/student_dashboard.html", {"application": application, "app_form": app_form, "doc_form": doc_form})
+
+@login_required
+def add_own_lead(request):
+    if not crm_allowed(request.user):
+        return redirect("student_dashboard")
+    profile = getattr(request.user, "crm_profile", None)
+    if not (request.user.is_superuser or (profile and profile.can_add_own_leads)):
+        return HttpResponse("Permission to add own leads is required", status=403)
+    form = OwnLeadForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        phone = normalise_phone(form.cleaned_data["phone"])
+        existing = Lead.objects.filter(phone=phone).first()
+        if existing:
+            messages.warning(request, "This mobile number already exists in Lead CRM.")
+            return redirect("lead_detail", pk=existing.pk) if scoped_leads(request.user).filter(pk=existing.pk).exists() else redirect("dashboard")
+        lead = form.save(commit=False)
+        lead.phone = phone
+        lead.uploaded_by = request.user
+        lead.assigned_to = request.user
+        lead.consent = True
+        lead.save()
+        LeadActivity.objects.create(lead=lead, activity_type="Created", description="Lead added by user to own CRM panel.", created_by=request.user)
+        messages.success(request, "Lead added to your panel.")
+        return redirect("lead_detail", pk=lead.pk)
+    return render(request, "admissions/add_own_lead.html", {"form": form})
 
 @login_required
 def dashboard(request):

@@ -1,11 +1,11 @@
 from django.contrib import admin
 from django import forms
-from .models import BulkDataBatch, CRMApiKey, ChatMessage, College, CollegeCategory, Communication, CommunicationTemplate, ContactMessage, Course, FollowUp, Lead, LeadActivity, LeadImportBatch, LeadRemark, NurtureLog, OnlineCourse, SiteSettings, SocialClick, SocialLink, StudentApplication, StudentDocument, StudentNotification, StudentPayment, UserProfile
+from .models import BulkDataBatch, CRMApiKey, ChatMessage, College, CollegeCategory, Communication, CommunicationTemplate, ContactMessage, Course, FollowUp, Lead, LeadActivity, LeadImportBatch, LeadRemark, NurtureLog, OnlineCourse, DistanceOnlineEducation, SiteSettings, SocialClick, SocialLink, StudentApplication, StudentDocument, StudentNotification, StudentPayment, UserProfile
 
 @admin.register(Lead)
 class LeadAdmin(admin.ModelAdmin):
-    list_display = ("name", "phone", "course", "status", "source", "assigned_to", "uploaded_by", "created_at")
-    list_filter = ("status", "source", "course", "assigned_to", "uploaded_by")
+    list_display = ("name", "phone", "lead_category", "course", "status", "source", "assigned_to", "uploaded_by", "created_at")
+    list_filter = ("lead_category", "status", "source", "course", "assigned_to", "uploaded_by")
     search_fields = ("name", "phone", "email")
 class CollegeAdminForm(forms.ModelForm):
     # College categories are selected directly from the CollegeCategory master.
@@ -107,6 +107,20 @@ class OnlineCourseAdmin(admin.ModelAdmin):
         ("SEO & Display", {"fields": ("seo_title", "seo_description", "seo_keywords", "seo_slug", "featured", "active")}),
     )
 
+
+@admin.register(DistanceOnlineEducation)
+class DistanceOnlineEducationAdmin(admin.ModelAdmin):
+    list_display = ("name", "university", "state", "country", "featured", "active")
+    list_filter = ("state", "country", "categories", "featured", "active")
+    search_fields = ("name", "university__name", "short_description", "description")
+    filter_horizontal = ("categories",)
+    fieldsets = (
+        ("Distance / Online Education", {"fields": ("name", "university", "state", "country", "categories")}),
+        ("Career content", {"fields": ("short_description", "description", "motivation")}),
+        ("Upload Image", {"fields": ("image",)}),
+        ("SEO & Display", {"fields": ("seo_title", "seo_description", "seo_keywords", "seo_slug", "featured", "active")}),
+    )
+
 @admin.register(SocialLink)
 class SocialLinkAdmin(admin.ModelAdmin):
     list_display = ("platform", "page_name", "url", "active", "display_order")
@@ -128,8 +142,8 @@ class CRMApiKeyAdmin(admin.ModelAdmin):
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ("user", "role", "organisation", "college", "can_import_leads", "can_export_leads", "active")
-    list_filter = ("role", "active", "can_import_leads", "can_export_leads")
+    list_display = ("user", "role", "organisation", "college", "can_import_leads", "can_export_leads", "can_add_own_leads", "active")
+    list_filter = ("role", "active", "can_import_leads", "can_export_leads", "can_add_own_leads")
     search_fields = ("user__username", "user__first_name", "user__last_name", "organisation")
 
 @admin.register(LeadImportBatch)
@@ -154,7 +168,7 @@ admin.site.register(CommunicationTemplate)
 
 @admin.register(SiteSettings)
 class SiteSettingsAdmin(admin.ModelAdmin):
-    fieldsets = (("Branding", {"fields": ("header_logo", "logo_alt_text")}), ("Apply Popup", {"fields": ("apply_popup_enabled", "auto_open_popup", "popup_title", "popup_message", "popup_delay_seconds")}),)
+    fieldsets = (("Branding", {"fields": ("header_logo", "home_logo", "logo_alt_text")}), ("Apply Popup", {"fields": ("apply_popup_enabled", "auto_open_popup", "popup_title", "popup_message", "popup_delay_seconds")}),)
     def has_add_permission(self, request): return not SiteSettings.objects.exists()
     def has_delete_permission(self, request, obj=None): return False
 

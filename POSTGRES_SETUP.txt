@@ -5,7 +5,7 @@ POSTGRESQL LOCAL SETUP
 2. Confirm PostgreSQL has:
    Database: college_admission_db
    User: college_admission_user
-   Password: CollegeDB2026 (or change DATABASE_URL to your real password)
+   Password: set a unique password in your local .env
 3. Activate venv and run:
    pip install -r requirements.txt
    python manage.py check

@@ -1,12 +1,12 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-from .models import BulkDataBatch, CRMApiKey, College, Course, Communication, ContactMessage, FollowUp, Lead, LeadRemark, StudentApplication, StudentDocument, UserProfile
+from .models import BulkDataBatch, CRMApiKey, College, Course, DistanceOnlineEducation, Communication, ContactMessage, FollowUp, Lead, LeadRemark, StudentApplication, StudentDocument, UserProfile
 
 class LeadForm(forms.ModelForm):
     class Meta:
         model = Lead
-        fields = ["name", "father_name", "phone", "email", "course", "preferred_college"]
+        fields = ["name", "father_name", "phone", "email", "city", "course", "preferred_college", "preferred_distance_online"]
         labels = {
             "name": "Student Name",
             "father_name": "Father Name",
@@ -15,24 +15,28 @@ class LeadForm(forms.ModelForm):
             "city": "City",
             "course": "Course",
             "preferred_college": "College",
+            "preferred_distance_online": "Distance / Online Education",
         }
         widgets = {
             "name": forms.TextInput(attrs={"placeholder": "Student name"}),
             "father_name": forms.TextInput(attrs={"placeholder": "Father name"}),
             "phone": forms.TextInput(attrs={"placeholder": "10-digit mobile number", "inputmode": "numeric"}),
             "email": forms.EmailInput(attrs={"placeholder": "Email address"}),
+            "city": forms.TextInput(attrs={"placeholder": "City"}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["name"].required = True
         self.fields["phone"].required = True
-        for optional in ["father_name", "email", "course", "preferred_college"]:
+        for optional in ["father_name", "email", "city", "course", "preferred_college", "preferred_distance_online"]:
             self.fields[optional].required = False
         self.fields["course"].queryset = Course.objects.all().order_by("name")
         self.fields["preferred_college"].queryset = College.objects.filter(active=True).order_by("name")
+        self.fields["preferred_distance_online"].queryset = DistanceOnlineEducation.objects.filter(active=True).order_by("name")
         self.fields["course"].empty_label = "Select Course"
         self.fields["preferred_college"].empty_label = "Select College"
+        self.fields["preferred_distance_online"].empty_label = "Select Distance / Online Option"
 
     def clean_phone(self):
         phone = "".join(c for c in self.cleaned_data["phone"] if c.isdigit())
@@ -50,7 +54,7 @@ class LeadForm(forms.ModelForm):
         values = self.cleaned_data
         existing = Lead.objects.filter(phone=values["phone"]).first()
         if existing:
-            for field in ["name", "father_name", "email", "course", "preferred_college"]:
+            for field in ["name", "father_name", "email", "city", "course", "preferred_college", "preferred_distance_online"]:
                 value = values.get(field)
                 if value not in (None, ""):
                     setattr(existing, field, value)
@@ -65,7 +69,7 @@ class LeadForm(forms.ModelForm):
 class LeadUpdateForm(forms.ModelForm):
     class Meta:
         model = Lead
-        fields = ["status", "call_outcome", "next_action", "assigned_to", "source", "course", "preferred_college"]
+        fields = ["lead_category", "status", "call_outcome", "next_action", "assigned_to", "source", "course", "preferred_college", "preferred_distance_online"]
 
 class FollowUpCompleteForm(forms.Form):
     outcome = forms.CharField(widget=forms.Textarea(attrs={"rows":3}), help_text="Record call result, parent response and agreed next action.")
@@ -180,3 +184,15 @@ class ContactForm(forms.ModelForm):
         model = ContactMessage
         fields = ["name", "phone", "email", "subject", "message"]
         widgets = {"message": forms.Textarea(attrs={"rows": 5})}
+
+
+class OwnLeadForm(forms.ModelForm):
+    class Meta:
+        model = Lead
+        fields = ["name", "father_name", "phone", "email", "city", "course", "preferred_college", "preferred_distance_online", "source", "lead_category", "next_action"]
+
+    def clean_phone(self):
+        phone = "".join(c for c in self.cleaned_data["phone"] if c.isdigit())
+        if len(phone) < 10:
+            raise forms.ValidationError("Enter a valid 10-digit mobile number.")
+        return phone[-10:]

@@ -538,6 +538,15 @@ class Lead(models.Model):
         on_delete=models.SET_NULL,
     )
 
+    preferred_distance_online = models.ForeignKey(
+        "DistanceOnlineEducation",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="leads",
+        verbose_name="Distance / Online Education",
+    )
+
     score = models.CharField(
         "Entrance score/rank",
         max_length=80,
@@ -556,6 +565,13 @@ class Lead(models.Model):
         decimal_places=2,
         null=True,
         blank=True,
+    )
+
+    LEAD_CATEGORIES = [(x, x) for x in ["Hot", "Warm", "Cold", "Fresh", "Follow-up", "Admission Ready", "Converted", "Lost"]]
+
+    lead_category = models.CharField(
+        max_length=30, choices=LEAD_CATEGORIES, default="Fresh", db_index=True,
+        help_text="Lead priority/category used by counsellors for nurturing and conversion."
     )
 
     source = models.CharField(
@@ -844,6 +860,11 @@ class UserProfile(models.Model):
         default=False,
     )
 
+    can_add_own_leads = models.BooleanField(
+        default=True,
+        help_text="Allow this user to add leads to their own CRM panel."
+    )
+
     def __str__(self):
         return f"{self.user.username} · {self.role}"
 
@@ -1032,6 +1053,7 @@ class Communication(models.Model):
             "Email",
             "WhatsApp",
             "SMS",
+            "RCS",
         ]
     ]
 
@@ -1683,12 +1705,46 @@ class ChatMessage(models.Model):
 # media/branding/
 # ============================================================
 
+class DistanceOnlineEducation(models.Model):
+    """Distance / Online Education catalogue managed from CRM/Admin."""
+    name = models.CharField(max_length=180)
+    university = models.ForeignKey("UniversityMaster", on_delete=models.SET_NULL, null=True, blank=True, related_name="distance_online_programmes")
+    state = models.ForeignKey("StateMaster", on_delete=models.SET_NULL, null=True, blank=True, related_name="distance_online_programmes")
+    country = models.ForeignKey("CountryMaster", on_delete=models.SET_NULL, null=True, blank=True, related_name="distance_online_programmes")
+    categories = models.ManyToManyField("CollegeCategory", blank=True, related_name="distance_online_programmes")
+    short_description = models.CharField(max_length=220, blank=True)
+    description = models.TextField("Career path", blank=True)
+    motivation = models.CharField(max_length=180, blank=True)
+    image = models.ImageField(upload_to="distance_online/", blank=True, null=True)
+    seo_title = models.CharField(max_length=180, blank=True)
+    seo_description = models.CharField(max_length=320, blank=True)
+    seo_keywords = models.TextField(blank=True)
+    seo_slug = models.SlugField(max_length=220, blank=True, db_index=True)
+    featured = models.BooleanField(default=False)
+    active = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = "Distance / Online Education"
+        verbose_name_plural = "Distance / Online Education"
+        ordering = ("name",)
+
+    def __str__(self):
+        return self.name
+
+
 class SiteSettings(models.Model):
 
     header_logo = models.ImageField(
         upload_to="branding/",
         blank=True,
         null=True,
+    )
+
+    home_logo = models.ImageField(
+        upload_to="branding/",
+        blank=True,
+        null=True,
+        help_text="Optional College Admission logo displayed on the home page.",
     )
 
     logo_alt_text = models.CharField(

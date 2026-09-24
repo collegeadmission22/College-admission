@@ -1,0 +1,15 @@
+[Unit]
+Description=College Admission Django CRM
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=ubuntu
+Group=www-data
+WorkingDirectory=/var/www/college_admission
+EnvironmentFile=/etc/college-admission.env
+ExecStart=/var/www/college_admission/venv/bin/gunicorn config.wsgi:application --bind 127.0.0.1:8000 --workers 3 --timeout 120
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

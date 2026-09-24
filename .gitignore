@@ -1,13 +1,30 @@
-venv/
+# Credentials and local configuration
 .env
 .env.*
 !.env.example
 *.pem
 *.key
+*.p12
+*.pfx
 secrets.json
 credentials.json
+# Python and local runtimes
+venv/
+.venv/
 __pycache__/
 *.py[cod]
-db.sqlite3
-staticfiles/
+.pytest_cache/
+.mypy_cache/
+# Runtime data and generated output
 media/
+staticfiles/
+db.sqlite3
+*.sqlite3
+*.sqlite
+*.dump
+*.sql
+*.bak
+*.log
+# Local editor files
+.vscode/
+.idea/
