@@ -1,0 +1,62 @@
+databases:
+  - name: college-admission-db
+    databaseName: college_admission_db
+    user: college_admission_user
+    plan: free
+
+services:
+  - type: web
+    name: college-admission-portal
+    runtime: python
+    plan: free
+    buildCommand: ./build.sh
+    startCommand: gunicorn config.wsgi:application
+    healthCheckPath: /health/
+    autoDeployTrigger: commit
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.10
+      - key: DATABASE_URL
+        fromDatabase:
+          name: college-admission-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: .onrender.com
+      - key: CSRF_TRUSTED_ORIGINS
+        value: https://*.onrender.com
+      - key: SECURE_HSTS_SECONDS
+        value: "31536000"
+  - type: cron
+    name: college-admission-followup-reminders
+    runtime: python
+    schedule: "*/10 * * * *"
+    buildCommand: ./build.sh
+    startCommand: python manage.py send_followup_reminders
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: college-admission-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+  - type: cron
+    name: college-admission-lead-nurturing
+    runtime: python
+    schedule: "0 4 * * *"
+    buildCommand: ./build.sh
+    startCommand: python manage.py run_lead_nurturing
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: college-admission-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"

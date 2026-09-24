@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Bulk Data Management{% endblock %}
+{% block content %}
+<main class="container crm bulk-page">
+  <a href="{% url 'dashboard' %}">← Back to CRM</a>
+  <div class="section-head"><div><span class="eyebrow">ADMIN / STAFF TOOLS</span><h1>Bulk Data Management</h1><p>Upload, update and export leads and catalogue records with a complete audit trail.</p></div></div>
+
+  <div class="bulk-grid">
+    <section class="panel bulk-upload-card">
+      <h2>Bulk Upload</h2>
+      <p class="muted">Download the correct template first. Mobile number identifies leads; catalogue records use their name-based matching key.</p>
+      <form method="post" enctype="multipart/form-data">{% csrf_token %}{{ form.as_p }}<button class="primary" type="submit">Upload and Process Data</button></form>
+      <div class="import-note"><strong>Bulk images:</strong> put JPG, PNG or WEBP files in one ZIP and enter each exact filename in the spreadsheet's <em>Image Filename</em> column. Leads are data-only. You may alternatively use licensed external image/source URLs.</div>
+    </section>
+    <section class="panel">
+      <h2>Templates and Exports</h2>
+      {% for key,spec in datasets.items %}
+      <article class="dataset-card"><div><strong>{{ spec.title }}</strong><small>Excel/CSV import format</small></div><div class="dataset-actions"><a href="{% url 'bulk_data_template' key 'xlsx' %}">Template XLSX</a><a href="{% url 'bulk_data_template' key 'csv' %}">CSV</a><a href="{% url 'bulk_data_export' key 'xlsx' %}">Export XLSX</a><a href="{% url 'bulk_data_export' key 'csv' %}">CSV</a></div></article>
+      {% endfor %}
+    </section>
+  </div>
+
+  <section class="panel audit-panel"><div class="section-head"><div><span class="eyebrow">ACCOUNTABILITY</span><h2>Import Audit History</h2></div></div>
+    <div class="table-wrap"><table><thead><tr><th>Date</th><th>Dataset/File</th><th>User</th><th>Mode</th><th>Total</th><th>Created</th><th>Updated</th><th>Images</th><th>Skipped</th><th>Rejected</th><th>Errors</th></tr></thead><tbody>
+    {% for batch in batches %}<tr><td>{{ batch.created_at|date:'d M Y H:i' }}</td><td><strong>{{ batch.get_dataset_display }}</strong><small>{{ batch.file_name }}</small></td><td>{{ batch.uploaded_by|default:'Deleted user' }}</td><td>{{ batch.get_mode_display }}</td><td>{{ batch.total_rows }}</td><td>{{ batch.created_count }}</td><td>{{ batch.updated_count }}</td><td>{{ batch.imported_image_count }}</td><td>{{ batch.skipped_count }}</td><td class="{% if batch.rejected_count %}error-text{% endif %}">{{ batch.rejected_count }}</td><td>{% if batch.rejected_count %}<a class="text-link" href="{% url 'bulk_data_errors' batch.pk %}">Download</a>{% else %}—{% endif %}</td></tr>{% empty %}<tr><td colspan="11">No bulk imports have been processed.</td></tr>{% endfor %}
+    </tbody></table></div>
+  </section>
+</main>
+{% endblock %}

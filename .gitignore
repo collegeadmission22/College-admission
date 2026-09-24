@@ -1,0 +1,13 @@
+venv/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets.json
+credentials.json
+__pycache__/
+*.py[cod]
+db.sqlite3
+staticfiles/
+media/

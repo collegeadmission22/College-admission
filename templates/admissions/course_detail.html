@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}{{ course.seo_title|default:course.name }} | College Admission{% endblock %}
+{% block content %}
+<section class="detail-hero"><div class="container detail-layout"><div class="detail-image">{% if course.image %}<img src="{{ course.image.url }}" alt="{{ course.name }}" draggable="false">{% else %}<div class="image-placeholder course-art">{{ course.category|slice:':3'|upper }}</div>{% endif %}</div><div><span class="eyebrow">{{ course.category }} · {{ course.get_level_display }}</span><h1>{{ course.name }}</h1>{% if course.short_description %}<p>{{ course.short_description }}</p>{% endif %}<button class="button detail-apply" data-open-apply data-course="{{ course.pk }}">Apply Now</button></div></div></section>
+<main class="section container detail-content">{% if course.career_description %}<section><h2>Career Path & Opportunities</h2><p>{{ course.career_description|linebreaksbr }}</p></section>{% endif %}{% if course.motivation %}<blockquote>{{ course.motivation }}</blockquote>{% endif %}<section><h2>Course Information</h2><p><strong>Level:</strong> {{ course.get_level_display }} &nbsp; <strong>Duration:</strong> {{ course.duration|default:'Contact counsellor' }}</p></section>{% if related_colleges %}<section><h2>Colleges Offering {{ course.name }}</h2><div class="detail-tags">{% for college in related_colleges %}<a href="{% url 'college_detail' college.pk %}">{{ college.name }}</a>{% endfor %}</div></section>{% endif %}{% with info=course.additional_information %}{% if info and info.active %}
+<section class="additional-information"><h2>More Information</h2>{% if info.overview %}<div>{{ info.overview|linebreaks }}</div>{% endif %}</section>
+{% if info.placement %}<section><h2>Placement</h2><div>{{ info.placement|linebreaks }}</div></section>{% endif %}
+{% if info.campus_tour_url %}<section><h2>Campus Tours</h2><div class="card-actions"><a class="button detail-button" href="{{ info.campus_tour_url }}" target="_blank" rel="noopener">View Campus Tour</a></div></section>{% endif %}
+{% if info.gallery.all %}<section><h2>Gallery</h2><div class="additional-gallery">{% for item in info.gallery.all %}<figure><img src="{{ item.image.url }}" alt="{{ item.caption|default:'' }}" draggable="false">{% if item.caption %}<figcaption>{{ item.caption }}</figcaption>{% endif %}</figure>{% endfor %}</div></section>{% endif %}
+{% endif %}{% endwith %}
+<button class="button detail-apply" data-open-apply data-course="{{ course.pk }}">Get Free Counselling</button></main>
+{% endblock %}

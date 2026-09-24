@@ -1,0 +1,21 @@
+
+POSTGRESQL LOCAL SETUP
+
+1. Copy .env.example to .env
+2. Confirm PostgreSQL has:
+   Database: college_admission_db
+   User: college_admission_user
+   Password: CollegeDB2026 (or change DATABASE_URL to your real password)
+3. Activate venv and run:
+   pip install -r requirements.txt
+   python manage.py check
+   python manage.py migrate
+   python manage.py createsuperuser
+   python manage.py runserver
+
+Verify database:
+python manage.py shell -c "from django.db import connection; print(connection.vendor, connection.settings_dict['NAME'])"
+Expected: postgresql college_admission_db
+
+Front Free Counselling form fields:
+Student Name, Father Name, Mobile Number, Email, Course dropdown, College dropdown.
