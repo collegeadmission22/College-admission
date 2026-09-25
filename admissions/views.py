@@ -121,7 +121,7 @@ def courses_page(request):
     category = request.GET.get("category", "")
     q = request.GET.get("q", "").strip()
     courses = Course.objects.all().order_by("category", "name")
-    if category: courses = courses.filter(category=category)
+    if category: courses = courses.filter(Q(course_categories__name__iexact=category) | Q(category__iexact=category)).distinct()
     if q: courses = courses.filter(Q(name__icontains=q) | Q(short_description__icontains=q) | Q(career_description__icontains=q) | Q(category__icontains=q))
     return render(request, "admissions/courses.html", {"course_list": courses, "categories": Course.CATEGORIES, "selected_category": category, "q": q})
 
