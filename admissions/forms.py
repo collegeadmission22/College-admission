@@ -6,37 +6,32 @@ from .models import BulkDataBatch, CRMApiKey, College, Course, DistanceOnlineEdu
 class LeadForm(forms.ModelForm):
     class Meta:
         model = Lead
-        fields = ["name", "father_name", "phone", "email", "city", "course", "preferred_college", "preferred_distance_online"]
+        fields = ["name", "father_name", "phone", "email", "course", "preferred_college"]
         labels = {
             "name": "Student Name",
             "father_name": "Father Name",
             "phone": "Mobile Number",
             "email": "Email",
-            "city": "City",
             "course": "Course",
             "preferred_college": "College",
-            "preferred_distance_online": "Distance / Online Education",
         }
         widgets = {
             "name": forms.TextInput(attrs={"placeholder": "Student name"}),
             "father_name": forms.TextInput(attrs={"placeholder": "Father name"}),
             "phone": forms.TextInput(attrs={"placeholder": "10-digit mobile number", "inputmode": "numeric"}),
             "email": forms.EmailInput(attrs={"placeholder": "Email address"}),
-            "city": forms.TextInput(attrs={"placeholder": "City"}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["name"].required = True
         self.fields["phone"].required = True
-        for optional in ["father_name", "email", "city", "course", "preferred_college", "preferred_distance_online"]:
+        for optional in ["father_name", "email", "course", "preferred_college"]:
             self.fields[optional].required = False
         self.fields["course"].queryset = Course.objects.all().order_by("name")
         self.fields["preferred_college"].queryset = College.objects.filter(active=True).order_by("name")
-        self.fields["preferred_distance_online"].queryset = DistanceOnlineEducation.objects.filter(active=True).order_by("name")
         self.fields["course"].empty_label = "Select Course"
         self.fields["preferred_college"].empty_label = "Select College"
-        self.fields["preferred_distance_online"].empty_label = "Select Distance / Online Option"
 
     def clean_phone(self):
         phone = "".join(c for c in self.cleaned_data["phone"] if c.isdigit())
@@ -54,7 +49,7 @@ class LeadForm(forms.ModelForm):
         values = self.cleaned_data
         existing = Lead.objects.filter(phone=values["phone"]).first()
         if existing:
-            for field in ["name", "father_name", "email", "city", "course", "preferred_college", "preferred_distance_online"]:
+            for field in ["name", "father_name", "email", "course", "preferred_college"]:
                 value = values.get(field)
                 if value not in (None, ""):
                     setattr(existing, field, value)
