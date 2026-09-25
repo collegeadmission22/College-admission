@@ -88,7 +88,7 @@ def home(request):
         consent = request.POST.get("consent") == "on"
         if form.is_valid() and consent:
             _save_public_lead(form, "Website")
-            messages.success(request, "Thanks! Your details are saved in Lead CRM. Helpline: 9429692142, 9911445580, 9911442142.")
+            messages.success(request, "Thank you for contacting College Admission! We have received your enquiry. Our counsellor will contact you shortly. No donation or extra charges. Please Call for more information 9429692142, 9911445580, 9911442142.")
             return redirect("home")
         messages.error(request, "Please enter valid details and accept the contact consent.")
     return render(request, "admissions/home.html", {"form": form, "apply_form": form, "colleges": colleges.prefetch_related("categories", "courses")[:12], "courses": Course.objects.prefetch_related("college_categories", "course_categories")[:12], "college_categories": CollegeCategory.objects.order_by("name"), "distance_online": DistanceOnlineEducation.objects.filter(active=True).order_by("-featured", "name")[:8], "q": q})
@@ -108,7 +108,7 @@ def contact(request):
         consent = request.POST.get("consent") == "on"
         if form.is_valid() and consent:
             _save_public_lead(form, "Contact Form")
-            messages.success(request, "Thanks! Your details are saved in Lead CRM. Helpline: 9429692142, 9911445580, 9911442142.")
+            messages.success(request, "Thank you for contacting College Admission! We have received your enquiry. Our counsellor will contact you shortly. No donation or extra charges. Please Call for more information 9429692142, 9911445580, 9911442142.")
             return redirect("contact")
         messages.error(request, "Please enter valid details and accept the contact consent.")
     return render(request, "admissions/contact.html", {"form": form, "apply_form": form})
@@ -194,7 +194,7 @@ def quick_apply(request):
         source = "Website"
     if form.is_valid() and consent:
         _save_public_lead(form, source)
-        messages.success(request, "Thanks! Your details are saved in Lead CRM. Helpline: 9429692142, 9911445580, 9911442142.")
+        messages.success(request, "Thank you for contacting College Admission! We have received your enquiry. Our counsellor will contact you shortly. No donation or extra charges. Please Call for more information 9429692142, 9911445580, 9911442142.")
     else:
         messages.error(request, "Please enter valid details and accept the contact consent.")
     return redirect(request.META.get("HTTP_REFERER") or "home")
